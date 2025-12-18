@@ -6,6 +6,11 @@ import (
 	"testing"
 )
 
+type Coord struct {
+	X int
+	Y int
+}
+
 type Grid [][]int
 
 func (grid Grid) String() string {
@@ -53,18 +58,27 @@ func Accessible(grid Grid, x, y int) (bool, int) {
 	return neighbours < 4, neighbours
 }
 
-func CountAccessible(grid Grid) int {
+func CountAccessible(grid Grid) (int, []Coord) {
 	count := 0
+	coords := make([]Coord, 0)
+
 	for y := 0; y < len(grid); y++ {
 		for x := 0; x < len(grid[0]); x++ {
 			accessible, _ := Accessible(grid, x, y)
 			if accessible {
 				count++
+				coords = append(coords, Coord{X: x, Y: y})
 			}
 		}
 	}
 
-	return count
+	return count, coords
+}
+
+func (grid *Grid) RemoveCoords(original Grid, coords []Coord) {
+	for _, coord := range coords {
+		(*grid)[coord.Y][coord.X] = 0
+	}
 }
 
 func ParseInput(input string) Grid {
@@ -101,15 +115,29 @@ func TestExample(t *testing.T) {
 @.@.@@@.@.
 `
 	result := 13
+	resultWithRemove := 43
 
 	grid := ParseInput(input)
 	t.Log(grid)
 
-	accessibleCount := CountAccessible(grid)
+	accessibleCount, accessibleCoords := CountAccessible(grid)
 	t.Logf("Accessible tiles: %d", accessibleCount)
 
 	if accessibleCount != result {
 		t.Errorf("Expected %d accessible tiles, got %d", result, accessibleCount)
+	}
+
+	count := accessibleCount
+	for count > 0 {
+		grid.RemoveCoords(grid, accessibleCoords)
+		//t.Logf("Grid after removal: %s", grid)
+		count, accessibleCoords = CountAccessible(grid)
+		accessibleCount += count
+	}
+	t.Logf("Total accessible tiles after removals: %d", accessibleCount)
+
+	if accessibleCount != resultWithRemove {
+		t.Errorf("Expected %d total accessible tiles after removals, got %d", resultWithRemove, accessibleCount)
 	}
 }
 
@@ -122,6 +150,14 @@ func TestInput(t *testing.T) {
 	grid := ParseInput(string(input))
 	t.Log(grid)
 
-	accessibleCount := CountAccessible(grid)
+	accessibleCount, accessibleCoords := CountAccessible(grid)
 	t.Logf("Accessible tiles: %d", accessibleCount)
+
+	count := accessibleCount
+	for count > 0 {
+		grid.RemoveCoords(grid, accessibleCoords)
+		count, accessibleCoords = CountAccessible(grid)
+		accessibleCount += count
+	}
+	t.Logf("Total accessible tiles after removals: %d", accessibleCount)
 }
