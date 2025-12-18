@@ -25,34 +25,51 @@ func ParseBank(input string) []int {
 	return batteries
 }
 
-func Joltage(bank []int) int {
-	c := make([]int, len(bank)-1)
-	copy(c, bank[0:len(bank)-1])
-
-	slices.Sort(c)
-	first := c[len(c)-1]
-	second := 0
-
-	for i, v := range bank {
-		if v < first {
-			continue
-		}
-
-		c2 := make([]int, len(bank)-1-i)
-		copy(c2, bank[i+1:len(bank)])
-		slices.Sort(c2)
-		second = c2[len(c2)-1]
-
-		break
+func Max(slice []int) int {
+	if len(slice) == 0 {
+		panic("Max of empty slice")
 	}
+	c := make([]int, len(slice))
+	copy(c, slice)
+	slices.Sort(c)
 
-	return 10*first + second
+	return c[len(c)-1]
 }
 
-func GetJoltages(banks [][]int) []int {
+func IndexOf(slice []int, value int) int {
+	for i, v := range slice {
+		if v == value {
+			return i
+		}
+	}
+
+	return -1
+}
+
+func Joltage(bank []int, num int) int {
+	joltage := 0
+
+	start := 0
+	end := len(bank) - num + 1
+	last := 0
+
+	for i := 0; i < num; i++ {
+		r := bank[start:end]
+		last = Max(r)
+		joltage = 10*joltage + last
+
+		lastIndex := IndexOf(r, last)
+		start += lastIndex + 1
+		end += 1
+	}
+
+	return joltage
+}
+
+func GetJoltages(banks [][]int, num int) []int {
 	joltages := make([]int, len(banks))
 	for i, bank := range banks {
-		joltages[i] = Joltage(bank)
+		joltages[i] = Joltage(bank, num)
 	}
 
 	return joltages
@@ -75,11 +92,12 @@ func TestExample(t *testing.T) {
 818181911112111
 `
 	result := 357
+	resultTwelve := 3121910778619
 
 	banks := ParseInput(input)
 	t.Log("Parsed banks:", banks)
 
-	joltages := GetJoltages(banks)
+	joltages := GetJoltages(banks, 2)
 	t.Log("Joltages:", joltages)
 
 	sum := Sum(joltages)
@@ -87,6 +105,16 @@ func TestExample(t *testing.T) {
 
 	if sum != result {
 		t.Errorf("Expected %d, got %d", result, sum)
+	}
+
+	joltagesTwelve := GetJoltages(banks, 12)
+	t.Log("Joltages for 12:", joltagesTwelve)
+
+	sumTwelve := Sum(joltagesTwelve)
+	t.Log("Sum of joltages for 12:", sumTwelve)
+
+	if sumTwelve != resultTwelve {
+		t.Errorf("Expected %d, got %d", resultTwelve, sumTwelve)
 	}
 }
 
@@ -99,9 +127,15 @@ func TestInput(t *testing.T) {
 	banks := ParseInput(string(input))
 	t.Log("Parsed banks:", banks)
 
-	joltages := GetJoltages(banks)
+	joltages := GetJoltages(banks, 2)
 	t.Log("Joltages:", joltages)
 
 	sum := Sum(joltages)
 	t.Log("Sum of joltages:", sum)
+
+	joltagesTwelve := GetJoltages(banks, 12)
+	t.Log("Joltages for 12:", joltagesTwelve)
+
+	sumTwelve := Sum(joltagesTwelve)
+	t.Log("Sum of joltages for 12:", sumTwelve)
 }
